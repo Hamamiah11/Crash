@@ -1,0 +1,91 @@
+:root { 
+    --neon: #00ff88; 
+    --bg: #0a0c10; 
+    --grid: #1c2128; 
+    --danger: #ff4757; 
+    --font: 'Roboto Mono', monospace; 
+}
+
+body { 
+    background: var(--bg); 
+    color: white; 
+    font-family: var(--font); 
+    font-weight: 700;
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+    margin: 0; 
+    overflow: hidden; 
+}
+
+.container { 
+    display: flex; 
+    background: #161b22; 
+    border: 2px solid #30363d; 
+    border-radius: 12px; 
+    width: 850px; 
+    height: 480px; 
+    overflow: hidden; 
+}
+
+.game-area { 
+    flex: 2; 
+    position: relative; 
+    background-color: var(--bg); 
+    background-image: 
+        linear-gradient(var(--grid) 1px, transparent 1px), 
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px); 
+    background-size: 40px 40px; 
+}
+
+canvas { width: 100%; height: 100%; position: absolute; }
+
+#mult-display { 
+    position: absolute; 
+    top: 50%; left: 50%; 
+    transform: translate(-50%, -50%); 
+    font-size: 5.5rem; 
+    color: var(--neon); 
+    z-index: 10; 
+    text-shadow: 0 0 20px rgba(0,255,136,0.2); 
+}
+
+.sidebar { 
+    flex: 0.8; 
+    padding: 30px; 
+    background: #0d1117; 
+    display: flex; 
+    flex-direction: column; 
+    border-left: 2px solid #30363d; 
+}
+
+.wallet-info { margin-bottom: 30px; border-bottom: 1px solid #30363d; padding-bottom: 15px; }
+.wallet-info span { color: var(--neon); font-size: 1.4rem; display: block; }
+
+input { 
+    background: #161b22; 
+    border: 2px solid #30363d; 
+    color: white; 
+    padding: 12px; 
+    border-radius: 4px; 
+    margin: 8px 0 20px 0; 
+    width: 100%; 
+    box-sizing: border-box; 
+    font-family: var(--font);
+}
+
+button { 
+    width: 100%; 
+    padding: 18px; 
+    border-radius: 4px; 
+    border: none; 
+    font-family: var(--font); 
+    font-weight: 700; 
+    cursor: pointer; 
+    font-size: 1.1rem; 
+}
+
+#bet-btn { background: var(--neon); color: #000; }
+#cash-btn { background: #ffc107; color: #000; display: none; }
+.history { margin-top: auto; font-size: 0.8rem; color: #8b949e; }
