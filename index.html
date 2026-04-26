@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<body>
+  <h1>Multiplier: <span id="mult">1.00</span>x</h1>
+  <button id="btn" onclick="start()">Start Game</button>
+  <button id="cash" onclick="cashOut()" disabled>CASH OUT</button>
+  <p id="status"></p>
+
+  <script>
+    let multiplier = 1.00;
+    let crashPoint;
+    let interval;
+
+    function start() {
+      multiplier = 1.00;
+      // The "Crash" math: lower numbers are more common
+      crashPoint = (0.99 / (1 - Math.random())).toFixed(2);
+      document.getElementById('btn').disabled = true;
+      document.getElementById('cash').disabled = false;
+      document.getElementById('status').innerText = "Game started!";
+
+      interval = setInterval(() => {
+        multiplier += 0.01;
+        document.getElementById('mult').innerText = multiplier.toFixed(2);
+        
+        if (multiplier >= crashPoint) {
+          clearInterval(interval);
+          document.getElementById('status').innerText = "CRASHED at " + crashPoint + "x!";
+          reset();
+        }
+      }, 100);
+    }
+
+    function cashOut() {
+      clearInterval(interval);
+      document.getElementById('status').innerText = "You Cashed Out at " + multiplier.toFixed(2) + "x!";
+      reset();
+    }
+
+    function reset() {
+      document.getElementById('btn').disabled = false;
+      document.getElementById('cash').disabled = true;
+    }
+  </script>
+</body>
+</html>
