@@ -1,102 +1,134 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <style>
-        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; }
-        .game-box { border: 2px solid #444; padding: 20px; width: 300px; margin: 50px auto; border-radius: 10px; }
-        #mult { font-size: 3em; color: #00ff00; margin: 20px 0; }
-        input { padding: 10px; width: 80%; margin-bottom: 10px; border-radius: 5px; border: none; }
-        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
-        #start-btn { background: #28a745; color: white; }
-        #cash-btn { background: #ffc107; color: black; display: none; }
-        #status { height: 20px; margin-top: 10px; font-weight: bold; }
+        :root { --neon: #00ff88; --bg: #0d1117; --danger: #ff4757; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { display: flex; background: #161b22; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 800px; height: 450px; }
+        /* Game Screen */
+        .game-area { flex: 2; position: relative; border-right: 1px solid #30363d; background: radial-gradient(circle at center, #1c2128 0%, #0d1117 100%); }
+        canvas { width: 100%; height: 100%; }
+        #mult-display { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; font-weight: 800; color: var(--neon); text-shadow: 0 0 20px rgba(0,255,136,0.3); }
+        /* Sidebar */
+        .sidebar { flex: 1; padding: 30px; display: flex; flex-direction: column; justify-content: space-between; }
+        .wallet-info { font-size: 0.9rem; color: #8b949e; margin-bottom: 20px; }
+        .wallet-info span { color: white; font-size: 1.5rem; font-weight: bold; display: block; }
+        input { background: #0d1117; border: 1px solid #30363d; color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
+        #bet-btn { background: var(--neon); color: #0d1117; }
+        #bet-btn:hover { background: #00e577; transform: translateY(-2px); }
+        #cash-btn { background: #f1c40f; color: black; display: none; }
+        .history { margin-top: 20px; color: #8b949e; font-size: 0.8rem; }
     </style>
 </head>
 <body>
-    <div class="game-box">
-        <h2>Wallet: $<span id="balance">100.00</span></h2>
-        <div id="mult">1.00x</div>
-        <input type="number" id="bet-amount" placeholder="Bet Amount" value="10">
-        <br>
-        <button id="start-btn" onclick="startGame()">PLACE BET</button>
-        <button id="cash-btn" onclick="cashOut()">CASH OUT</button>
-        <p id="status"></p>
+    <div class="container">
+        <div class="game-area">
+            <canvas id="gameCanvas"></canvas>
+            <div id="mult-display">1.00x</div>
+        </div>
+        <div class="sidebar">
+            <div class="wallet-info">Balance: <span id="balance">$100.00</span></div>
+            <div>
+                <label>Bet Amount</label>
+                <input type="number" id="bet-amt" value="10">
+                <button id="bet-btn" onclick="startGame()">PLACE BET</button>
+                <button id="cash-btn" onclick="cashOut()">CASH OUT</button>
+            </div>
+            <div class="history">Last: <span id="last-crash">--</span></div>
+        </div>
     </div>
 
     <script>
-        let balance = 100.00;
-        let multiplier = 1.00;
-        let bet = 0;
-        let crashPoint;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let balance = 100;
+        let multiplier = 1.0;
         let gameActive = false;
-        let interval;
+        let bet = 0;
+        let points = [];
+
+        function resize() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        window.onresize = resize;
+        resize();
+
+        function drawGame() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = gameActive ? "#00ff88" : "#ff4757";
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            
+            // Draw rising line
+            points.forEach((p, i) => {
+                const x = (i / 500) * canvas.width;
+                const y = canvas.height - (Math.pow(p, 1.5) * 40);
+                if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+
+            // Draw Arrow Head
+            if (points.length > 0) {
+                const lastX = ((points.length-1) / 500) * canvas.width;
+                const lastY = canvas.height - (Math.pow(points[points.length-1], 1.5) * 40);
+                ctx.fillStyle = ctx.strokeStyle;
+                ctx.beginPath();
+                ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            if (gameActive) requestAnimationFrame(drawGame);
+        }
 
         function startGame() {
-            const betInput = document.getElementById('bet-amount');
-            bet = parseFloat(betInput.value);
-
-            if (bet > balance || bet <= 0) {
-                updateStatus("Invalid bet or low balance!", "red");
-                return;
-            }
-
-            // Deduct bet and setup game
+            bet = parseFloat(document.getElementById('bet-amt').value);
+            if (bet > balance || bet <= 0) return alert("Check balance/bet!");
+            
             balance -= bet;
-            updateUI();
+            document.getElementById('balance').innerText = `$${balance.toFixed(2)}`;
             gameActive = true;
-            multiplier = 1.00;
+            multiplier = 1.0;
+            points = [1.0];
             
-            // Pro-tip: This math mimics real casino odds (3% instant crash at 1x)
-            crashPoint = Math.random() < 0.03 ? 1.00 : (0.98 / (1 - Math.random())).toFixed(2);
+            const crashAt = Math.random() < 0.05 ? 1.0 : (0.98 / (1 - Math.random())).toFixed(2);
             
-            toggleButtons(true);
-            updateStatus("Game running...", "white");
+            document.getElementById('bet-btn').style.display = "none";
+            document.getElementById('cash-btn').style.display = "block";
+            document.getElementById('mult-display').style.color = "#00ff88";
 
-            interval = setInterval(() => {
+            let tick = setInterval(() => {
                 multiplier += 0.01;
-                document.getElementById('mult').innerText = multiplier.toFixed(2) + "x";
-                
-                if (multiplier >= crashPoint) {
-                    endGame(true);
+                points.push(multiplier);
+                document.getElementById('mult-display').innerText = multiplier.toFixed(2) + "x";
+
+                if (multiplier >= crashAt) {
+                    clearInterval(tick);
+                    crash(multiplier);
                 }
-            }, 100);
+            }, 50);
+            drawGame();
         }
 
         function cashOut() {
             if (!gameActive) return;
-            let winnings = bet * multiplier;
-            balance += winnings;
-            updateStatus(`WIN! +$${winnings.toFixed(2)}`, "#00ff00");
-            endGame(false);
-        }
-
-        function endGame(crashed) {
-            clearInterval(interval);
+            const win = bet * multiplier;
+            balance += win;
             gameActive = false;
-            toggleButtons(false);
-            if (crashed) {
-                document.getElementById('mult').style.color = "#ff4444";
-                updateStatus(`CRASHED at ${multiplier.toFixed(2)}x`, "#ff4444");
-            } else {
-                document.getElementById('mult').style.color = "#00ff00";
-            }
-            updateUI();
+            document.getElementById('balance').innerText = `$${balance.toFixed(2)}`;
+            resetUI();
         }
 
-        function updateUI() {
-            document.getElementById('balance').innerText = balance.toFixed(2);
+        function crash(m) {
+            gameActive = false;
+            document.getElementById('mult-display').style.color = "#ff4757";
+            document.getElementById('last-crash').innerText = m.toFixed(2) + "x";
+            resetUI();
         }
 
-        function updateStatus(msg, color) {
-            const s = document.getElementById('status');
-            s.innerText = msg;
-            s.style.color = color;
-        }
-
-        function toggleButtons(running) {
-            document.getElementById('start-btn').style.display = running ? "none" : "inline-block";
-            document.getElementById('cash-btn').style.display = running ? "inline-block" : "none";
-            document.getElementById('mult').style.color = running ? "#00ff00" : (multiplier >= crashPoint ? "#ff4444" : "#00ff00");
+        function resetUI() {
+            document.getElementById('bet-btn').style.display = "block";
+            document.getElementById('cash-btn').style.display = "none";
         }
     </script>
 </body>
