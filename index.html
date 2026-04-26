@@ -1,24 +1,81 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <!-- Importing Roboto Mono -->
+    <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        :root { --neon: #00ff88; --bg: #0d1117; --danger: #ff4757; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { display: flex; background: #161b22; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 800px; height: 450px; }
-        /* Game Screen */
-        .game-area { flex: 2; position: relative; border-right: 1px solid #30363d; background: radial-gradient(circle at center, #1c2128 0%, #0d1117 100%); }
-        canvas { width: 100%; height: 100%; }
-        #mult-display { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 5rem; font-weight: 800; color: var(--neon); text-shadow: 0 0 20px rgba(0,255,136,0.3); }
-        /* Sidebar */
-        .sidebar { flex: 1; padding: 30px; display: flex; flex-direction: column; justify-content: space-between; }
-        .wallet-info { font-size: 0.9rem; color: #8b949e; margin-bottom: 20px; }
-        .wallet-info span { color: white; font-size: 1.5rem; font-weight: bold; display: block; }
-        input { background: #0d1117; border: 1px solid #30363d; color: white; padding: 12px; border-radius: 8px; margin-bottom: 10px; width: 100%; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; }
-        #bet-btn { background: var(--neon); color: #0d1117; }
-        #bet-btn:hover { background: #00e577; transform: translateY(-2px); }
-        #cash-btn { background: #f1c40f; color: black; display: none; }
-        .history { margin-top: 20px; color: #8b949e; font-size: 0.8rem; }
+        :root { 
+            --neon: #00ff88; 
+            --bg: #0a0c10; 
+            --grid: #1c2128;
+            --danger: #ff4757; 
+            --font: 'Roboto Mono', monospace;
+        }
+        body { 
+            background: var(--bg); 
+            color: white; 
+            font-family: var(--font); 
+            font-weight: 700;
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .container { 
+            display: flex; 
+            background: #161b22; 
+            border: 2px solid #30363d;
+            border-radius: 12px; 
+            overflow: hidden; 
+            width: 850px; 
+            height: 480px; 
+        }
+        /* Grid Background for Game Area */
+        .game-area { 
+            flex: 2; 
+            position: relative; 
+            background-color: var(--bg);
+            background-image: 
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        canvas { width: 100%; height: 100%; position: absolute; top: 0; left: 0; }
+        #mult-display { 
+            position: absolute; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-size: 5.5rem; 
+            color: var(--neon); 
+            z-index: 10;
+            pointer-events: none;
+        }
+        /* Sidebar Styles */
+        .sidebar { 
+            flex: 0.8; 
+            padding: 30px; 
+            background: #0d1117;
+            display: flex; 
+            flex-direction: column; 
+            border-left: 2px solid #30363d;
+        }
+        .wallet-info { margin-bottom: 30px; border-bottom: 1px solid #30363d; padding-bottom: 15px; }
+        .wallet-info span { color: var(--neon); font-size: 1.4rem; display: block; }
+        
+        label { font-size: 0.7rem; color: #8b949e; text-transform: uppercase; }
+        input { 
+            background: #161b22; border: 2px solid #30363d; color: white; 
+            padding: 12px; border-radius: 4px; margin: 8px 0 20px 0; 
+            width: 100%; box-sizing: border-box; font-family: var(--font);
+        }
+        button { 
+            width: 100%; padding: 18px; border-radius: 4px; border: none; 
+            font-family: var(--font); font-weight: 700; cursor: pointer; font-size: 1.1rem;
+        }
+        #bet-btn { background: var(--neon); color: #000; }
+        #cash-btn { background: #ffc107; color: #000; display: none; }
+        .history { margin-top: auto; font-size: 0.8rem; color: #8b949e; }
     </style>
 </head>
 <body>
@@ -28,14 +85,14 @@
             <div id="mult-display">1.00x</div>
         </div>
         <div class="sidebar">
-            <div class="wallet-info">Balance: <span id="balance">$100.00</span></div>
+            <div class="wallet-info">BALANCE<span id="balance">$100.00</span></div>
             <div>
                 <label>Bet Amount</label>
-                <input type="number" id="bet-amt" value="10">
+                <input type="number" id="bet-amt" value="10" step="1">
                 <button id="bet-btn" onclick="startGame()">PLACE BET</button>
                 <button id="cash-btn" onclick="cashOut()">CASH OUT</button>
             </div>
-            <div class="history">Last: <span id="last-crash">--</span></div>
+            <div class="history">RECENT CRASH: <span id="last-crash" style="color:white">--</span></div>
         </div>
     </div>
 
@@ -57,33 +114,38 @@
 
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw Line
             ctx.strokeStyle = gameActive ? "#00ff88" : "#ff4757";
-            ctx.lineWidth = 4;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = ctx.strokeStyle;
+            ctx.lineWidth = 5;
             ctx.beginPath();
             
-            // Draw rising line
             points.forEach((p, i) => {
-                const x = (i / 500) * canvas.width;
-                const y = canvas.height - (Math.pow(p, 1.5) * 40);
+                const x = (i / 400) * canvas.width;
+                const y = canvas.height - (Math.pow(p, 1.3) * 50);
                 if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
             });
             ctx.stroke();
+            ctx.shadowBlur = 0; // Reset glow for other elements
 
-            // Draw Arrow Head
+            // Draw "The Arrow" (Circle Head)
             if (points.length > 0) {
-                const lastX = ((points.length-1) / 500) * canvas.width;
-                const lastY = canvas.height - (Math.pow(points[points.length-1], 1.5) * 40);
-                ctx.fillStyle = ctx.strokeStyle;
+                const lastX = ((points.length-1) / 400) * canvas.width;
+                const lastY = canvas.height - (Math.pow(points[points.length-1], 1.3) * 50);
+                ctx.fillStyle = "white";
                 ctx.beginPath();
-                ctx.arc(lastX, lastY, 8, 0, Math.PI * 2);
+                ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
                 ctx.fill();
             }
+
             if (gameActive) requestAnimationFrame(drawGame);
         }
 
         function startGame() {
             bet = parseFloat(document.getElementById('bet-amt').value);
-            if (bet > balance || bet <= 0) return alert("Check balance/bet!");
+            if (bet > balance || bet <= 0) return;
             
             balance -= bet;
             document.getElementById('balance').innerText = `$${balance.toFixed(2)}`;
@@ -91,11 +153,12 @@
             multiplier = 1.0;
             points = [1.0];
             
-            const crashAt = Math.random() < 0.05 ? 1.0 : (0.98 / (1 - Math.random())).toFixed(2);
+            // Random crash math
+            const crashAt = Math.random() < 0.03 ? 1.0 : (0.99 / (1 - Math.random())).toFixed(2);
             
             document.getElementById('bet-btn').style.display = "none";
             document.getElementById('cash-btn').style.display = "block";
-            document.getElementById('mult-display').style.color = "#00ff88";
+            document.getElementById('mult-display').style.color = "var(--neon)";
 
             let tick = setInterval(() => {
                 multiplier += 0.01;
@@ -106,14 +169,13 @@
                     clearInterval(tick);
                     crash(multiplier);
                 }
-            }, 50);
+            }, 60);
             drawGame();
         }
 
         function cashOut() {
             if (!gameActive) return;
-            const win = bet * multiplier;
-            balance += win;
+            balance += (bet * multiplier);
             gameActive = false;
             document.getElementById('balance').innerText = `$${balance.toFixed(2)}`;
             resetUI();
@@ -121,7 +183,7 @@
 
         function crash(m) {
             gameActive = false;
-            document.getElementById('mult-display').style.color = "#ff4757";
+            document.getElementById('mult-display').style.color = "var(--danger)";
             document.getElementById('last-crash').innerText = m.toFixed(2) + "x";
             resetUI();
         }
