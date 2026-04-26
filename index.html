@@ -1,46 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+    <style>
+        body { background: #1a1a1a; color: white; font-family: sans-serif; text-align: center; }
+        .game-box { border: 2px solid #444; padding: 20px; width: 300px; margin: 50px auto; border-radius: 10px; }
+        #mult { font-size: 3em; color: #00ff00; margin: 20px 0; }
+        input { padding: 10px; width: 80%; margin-bottom: 10px; border-radius: 5px; border: none; }
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 5px; font-weight: bold; }
+        #start-btn { background: #28a745; color: white; }
+        #cash-btn { background: #ffc107; color: black; display: none; }
+        #status { height: 20px; margin-top: 10px; font-weight: bold; }
+    </style>
+</head>
 <body>
-  <h1>Multiplier: <span id="mult">1.00</span>x</h1>
-  <button id="btn" onclick="start()">Start Game</button>
-  <button id="cash" onclick="cashOut()" disabled>CASH OUT</button>
-  <p id="status"></p>
+    <div class="game-box">
+        <h2>Wallet: $<span id="balance">100.00</span></h2>
+        <div id="mult">1.00x</div>
+        <input type="number" id="bet-amount" placeholder="Bet Amount" value="10">
+        <br>
+        <button id="start-btn" onclick="startGame()">PLACE BET</button>
+        <button id="cash-btn" onclick="cashOut()">CASH OUT</button>
+        <p id="status"></p>
+    </div>
 
-  <script>
-    let multiplier = 1.00;
-    let crashPoint;
-    let interval;
+    <script>
+        let balance = 100.00;
+        let multiplier = 1.00;
+        let bet = 0;
+        let crashPoint;
+        let gameActive = false;
+        let interval;
 
-    function start() {
-      multiplier = 1.00;
-      // The "Crash" math: lower numbers are more common
-      crashPoint = (0.99 / (1 - Math.random())).toFixed(2);
-      document.getElementById('btn').disabled = true;
-      document.getElementById('cash').disabled = false;
-      document.getElementById('status').innerText = "Game started!";
+        function startGame() {
+            const betInput = document.getElementById('bet-amount');
+            bet = parseFloat(betInput.value);
 
-      interval = setInterval(() => {
-        multiplier += 0.01;
-        document.getElementById('mult').innerText = multiplier.toFixed(2);
-        
-        if (multiplier >= crashPoint) {
-          clearInterval(interval);
-          document.getElementById('status').innerText = "CRASHED at " + crashPoint + "x!";
-          reset();
+            if (bet > balance || bet <= 0) {
+                updateStatus("Invalid bet or low balance!", "red");
+                return;
+            }
+
+            // Deduct bet and setup game
+            balance -= bet;
+            updateUI();
+            gameActive = true;
+            multiplier = 1.00;
+            
+            // Pro-tip: This math mimics real casino odds (3% instant crash at 1x)
+            crashPoint = Math.random() < 0.03 ? 1.00 : (0.98 / (1 - Math.random())).toFixed(2);
+            
+            toggleButtons(true);
+            updateStatus("Game running...", "white");
+
+            interval = setInterval(() => {
+                multiplier += 0.01;
+                document.getElementById('mult').innerText = multiplier.toFixed(2) + "x";
+                
+                if (multiplier >= crashPoint) {
+                    endGame(true);
+                }
+            }, 100);
         }
-      }, 100);
-    }
 
-    function cashOut() {
-      clearInterval(interval);
-      document.getElementById('status').innerText = "You Cashed Out at " + multiplier.toFixed(2) + "x!";
-      reset();
-    }
+        function cashOut() {
+            if (!gameActive) return;
+            let winnings = bet * multiplier;
+            balance += winnings;
+            updateStatus(`WIN! +$${winnings.toFixed(2)}`, "#00ff00");
+            endGame(false);
+        }
 
-    function reset() {
-      document.getElementById('btn').disabled = false;
-      document.getElementById('cash').disabled = true;
-    }
-  </script>
+        function endGame(crashed) {
+            clearInterval(interval);
+            gameActive = false;
+            toggleButtons(false);
+            if (crashed) {
+                document.getElementById('mult').style.color = "#ff4444";
+                updateStatus(`CRASHED at ${multiplier.toFixed(2)}x`, "#ff4444");
+            } else {
+                document.getElementById('mult').style.color = "#00ff00";
+            }
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('balance').innerText = balance.toFixed(2);
+        }
+
+        function updateStatus(msg, color) {
+            const s = document.getElementById('status');
+            s.innerText = msg;
+            s.style.color = color;
+        }
+
+        function toggleButtons(running) {
+            document.getElementById('start-btn').style.display = running ? "none" : "inline-block";
+            document.getElementById('cash-btn').style.display = running ? "inline-block" : "none";
+            document.getElementById('mult').style.color = running ? "#00ff00" : (multiplier >= crashPoint ? "#ff4444" : "#00ff00");
+        }
+    </script>
 </body>
 </html>
